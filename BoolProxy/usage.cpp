@@ -4,7 +4,7 @@
 #include <exception>
 
 /*
- * Does you codebase include logs or traces ?
+ * Does your codebase include logs or traces ?
  * Do you often see code like:
  *	if(!returnsBoolConvertible()) {
  *		LOGGING::LOG_TO_FILE("returnsBoolConvertible failed with ", getError());
