@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include "bool_proxy.h"
+#include <exception>
 
 /*
  * Does you codebase include logs or traces ?
@@ -29,4 +30,6 @@ int main() {
 	CHECK_CUSTOM(false, [](auto&&... datas) {
 		std::cout << "This is a custom handler with " << sizeof...(datas) << " args" << std::endl;
 	}, 1, 2, 3);
+	CHECK_GET_LAST_ERROR(false, "I will print GetLastError() as well as this string");
+	CHECK_TRHOW(false, std::logic_error, "0xDEADBEEF");
 }

@@ -2,19 +2,24 @@
 #include <string>
 #include <iostream>
 #include <type_traits>
+#include <windows.h>
 
 /*
  * Writing a custom handler is easy too !
  * 
  * 1. Have a functor ready to use with the appropriate amount of arguments you'd expect
- * 2. Add a using declaration for BoolProxy<YourHandler>
- * 3. Add a using declaration for a verbose handler (if needed) with BoolProxy<YourHandler, policies::HandleVerbose>
+ * 2. Add using declarations with MAKE_HANDLER_USING_DECL or make your own
+ * 3. Define macros / functions that'll give expected result
  * 
  * Done.
  **/
 namespace bool_proxy {
 namespace detail {
 inline namespace v1 {
+
+#define MAKE_HANDLER_USING_DECL(final_name, handler_name) \
+using final_name = BoolProxy<handler_name>; \
+using final_name##Verbose = BoolProxy<handler_name, policies::HandleVerbose>;
 
 namespace policies {
 
@@ -54,8 +59,7 @@ struct LoggingHandler {
 		log_args(std::forward<Rest>(rest)...);
 	}
 };
-using BoolProxyLogger = BoolProxy<LoggingHandler>;
-using BoolProxyLoggerVerbose = BoolProxy<LoggingHandler, policies::HandleVerbose>;
+MAKE_HANDLER_USING_DECL(BoolProxyLogger, LoggingHandler)
 #define CHECK_LOG(_bool_, ...) BoolProxyLogger(_bool_, __FILE__, __FUNCSIG__, __LINE__, __VA_ARGS__) 
 #define CHECK_LOG_VERBOSE(_bool_, ...) BoolProxyLoggerVerbose(_bool_, __FILE__, __FUNCSIG__, __LINE__, __VA_ARGS__) 
 
@@ -66,10 +70,23 @@ struct CustomHandler {
 		func();
 	}
 };
-using BoolCustomHandler = BoolProxy<CustomHandler>;
-using BoolCustomHandlerVerbose = BoolProxy<CustomHandler, policies::HandleVerbose>;
+MAKE_HANDLER_USING_DECL(BoolCustomHandler, CustomHandler)
 #define CHECK_CUSTOM(_bool_, _func_, ...) BoolCustomHandler(_bool_, []() { _func_(__VA_ARGS__);  })
 #define CHECK_CUSTOM_VERBOSE(_bool_, _func_, ...) BoolCustomHandlerVerbose(_bool_, []() { _func_(__VA_ARGS__);  })
+
+
+#define CHECK_GET_LAST_ERROR(_bool_, ...) CHECK_LOG(_bool_, "GetLastError: ", GetLastError(), __VA_ARGS__)
+#define CHECK_GET_LAST_ERROR_VERBOSE(_bool_, ...) CHECK_LOG(_bool_,"GetLastError: ", GetLastError(), __VA_ARGS__)
+
+struct ThrowExceptionHandler {
+	template <typename ExceptionToThrow>
+	void operator()(ExceptionToThrow const& ex) {
+		throw ex;
+	}
+};
+MAKE_HANDLER_USING_DECL(BoolThrowExceptionHandle, ThrowExceptionHandler)
+#define CHECK_TRHOW(_bool_, _exception_type_, ...) BoolThrowExceptionHandle(_bool_, _exception_type_{__VA_ARGS__})
+#define CHECK_THROW_VERBOSE(_bool_, _exception_type_, ...) BoolThrowExceptionHandleVerbose(_bool_, _exception_type_{__VA_ARGS__})
 
 }
 }
